@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推箱子</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #wrap {
+            position: relative;
+            margin: 50px auto 0;
+        }
+
+        #wrap div {
+            position: absolute;
+        }
+
+        #wrap div img {
+            position: absolute;
+            bottom: 10px;
+        }
+
+        #wrap div.Zd img {
+            left: 5px;
+            bottom: 5px;
+        }
+
+        #wrap div.Xz img {
+            bottom: 5px;
+        }
+
+        div.Xz img {
+            width: 29px;
+            height: 29px;
+        }
+
+        div.Zd img {
+            width: 20px;
+            height: 20px;
+        }
+
+        .person {
+            width: 29px;
+        }
+
+        #btn {
+            width: 300px;
+            margin: 10px auto 0;
+        }
+
+        #s,
+        #x,
+        #prev {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrap"></div>
+    <div id="btn">
+        <input type="button" value="上一关" id="s" />
+        <input type="button" value="下一关" id="x" />
+        <input type="button" value="上一步" id="prev" />
+    </div>
+    <script>
+        //面向对象
+        var myGame = {
+            oWrap: document.getElementById("wrap"),
+            oS: document.getElementById("s"),
+            oX: document.getElementById("x"),
+            oPrev: document.getElementById("prev"),
+            //初始化游戏
+            init: function () {
+                //执行游戏,this.level->传入参数第几关
+                myGame.gameMap(this.level)
+            },
+            //地图每一块的宽高
+            size: {
+                x: 16,
+                y: 16,
+            },
+            //创建地图
+            level: 0,//标记关卡下标为0(第一关)
+            gameMap: function (lv) {
+                //地图大小
+                var that = this;
+                this.oWrap.style.width = 29 * this.size.x + "px";
+                this.oWrap.style.height = 29 * this.size.y + "px";
+                this.oWrap.style.background = "url(images/caopin.png)";
+                this.oWrap.innerHTML = "";//清除上一关的所有数据
+                this.oS.onclick = function () {
+                    that.level--;
+                    if (that.level < 0) {
+                        that.level = 0
+                    }
+                    that.gameMap(that.level)
+                };
+                this.oX.onclick = function () {
+                    that.level++;
+                    if (that.level >= that.arrGame.length) {
+                        that.level = that.arrGame.length - 1;//最后一关 下标:(length-1)
+                    }
+                    // console.log(that.level)
+                    that.gameMap(that.level)
+                };
+                this.oPrev.onclick = this.prev;
+                //定义一个变量
+                var person;
+                //循环遍历创建div盒子
+                for (var i = 0; i < this.size.x * this.size.y; i++) {
+                    var oDiv = document.createElement('div');
+                    var oImg = document.createElement("img");
+
+                    //全等于判断第n关的i(第几个div)时
+                    switch (this.arrGame[lv][i]) {
+                        case 1:
+                            //gameCommon改变指针指向myGame(this)
+                            this.gameCommon.call(this, i, oDiv, oImg)
+                            oImg.src = "images/shu.png";
+                            oDiv.className = "Shu";
+                            break;
+                        case 2:
+                            this.gameCommon.call(this, i, oDiv, oImg)
+                            oImg.src = "images/zhongdian.png";
+                            oDiv.className = "Zd"
+                            break;
+                        case 3:
+                            this.gameCommon.call(this, i, oDiv, oImg)
+                            oImg.src = "images/xiangzi2.png";
+                            oDiv.className = "Xz"
+                            break;
+                        case 4:
+                            this.gameCommon.call(this, i, oDiv, oImg)
+                            oImg.src = "images/zheng.png";
+                            oImg.className = "person";
+                            //将oImg赋值给person;
+                            person = oImg;
+                            break;
+                    }
+
+                }
+                // console.log(person)
+                //执行控制人物函数
+                this.controlPerson(person)
+            },
+            //游戏公共类
+            //这里this指向window
+            gameCommon: function (i, oDiv, oImg) {
+                //求定位的x,y轴坐标
+                var x = i % this.size.x;
+                var y = parseInt(i / this.size.y);
+                oDiv.style.width = 29 + "px";
+                oDiv.style.height = 29 + "px";
+                //保存每个div盒子的x,y轴坐标
+                oDiv.x = x;
+                oDiv.y = y;
+                //每个div盒子定位坐标值
+                oDiv.style.left = 29 * x + "px";
+                oDiv.style.top = 29 * y + "px";
+                //将创建元素标签塞入...
+                oDiv.appendChild(oImg);
+                this.oWrap.appendChild(oDiv);
+            },
+            //控制人物
+            controlPerson: function (person) {
+                //将指针this指向myGame,并用that保存
+                var that = this;
+                //按下键盘事件
+                document.onkeydown = function (e) {
+                    //兼容主流加ie浏览器;阻止默认事件
+                    e = e || window.event;
+                    e.preventDefault();
+                    //获取父级元素节点<div></div>
+                    var oParent = person.parentNode;
+                    // console.log(oParent)
+                    //存储人物行动轨迹(人物图片)
+                    that.data.person[that.dataNum] = {};//表示data.person里面存储对象
+                    that.data.person[that.dataNum].src = person.src;
+                    //全等于判断键盘事件
+                    switch (e.keyCode) {
+                        //左
+                        case 37:
+                            that.moveGame(oParent, { x: -1 })
+                            person.src = "images/zuo.png";
+                            break;
+
+                        //上
+                        case 38:
+                            that.moveGame(oParent, { y: -1 })
+                            person.src = "images/ho.png";
+                            break;
+                        //右
+                        case 39:
+                            that.moveGame(oParent, { x: 1 })
+                            person.src = "images/you.png";
+                            break;
+
+                        //下
+                        case 40:
+                            that.moveGame(oParent, { y: 1 })
+                            person.src = "images/zheng.png";
+                            break;
+                    }
+                }
+            },
+            //存储历史记录,人物与箱子的走动记录
+            data: {
+                person: [],
+                box: []
+            },
+            dataNum: 0,
+            //封装person移动函数
+            moveGame: function (oParent, json) {
+                var x = json.x || 0;
+                var y = json.y || 0;
+                var oBox = document.getElementsByClassName('Xz');
+                //判断当div盒子是第(oParent.x - 1) + (oParent.y) * this.size.x个时,并且盒子不等于1时
+                if (this.arrGame[this.level][(oParent.x + x) + (oParent.y + y) * this.size.x] != 1) {
+
+                    this.data.person[this.dataNum].x = oParent.x;//将当前的坐标位置存储起来
+                    this.data.person[this.dataNum].y = oParent.y;
+                    this.dataNum++;//下标递增,第0项,第一项,第二项.....
+                    console.log(this.data.person)
+                    // //每次移动盒子x,y轴加减1 oParent.x = oDiv.x  oParent.x -= 1  == oDiv.x -= 1
+                    oParent.x += x;
+                    oParent.y += y;
+                    // //盒子距离定位父级的距离(人物移动)
+                    oParent.style.left = oParent.x * 29 + "px";
+                    oParent.style.top = oParent.y * 29 + "px";
+                    oParent.style.zIndex = oParent.x + oParent.y * this.size.x + 1;
+
+                    for (var i = 0; i < oBox.length; i++) {
+                        // console.log(oBox)
+                        if (oBox[i].x == oParent.x && oBox[i].y == oParent.y) {
+                            if (this.arrGame[this.level][(oParent.x + x) + (oParent.y + y) * this.size.x] != 1) {
+                                if (this.boxsCrash(oBox[i], x, y)) {
+                                    //人往后退一步
+                                    oParent.x -= x;
+                                    oParent.y -= y;
+                                    oParent.style.left = oParent.x * 29 + "px";
+                                    oParent.style.top = oParent.y * 29 + "px";
+                                    this.dataNum--;
+                                    this.data.person.pop();
+                                } else {
+                                    //存储箱子移动的下一个坐标,箱子本身不动时坐标没有获取
+                                    this.data.box[this.dataNum - 1] = {};
+                                    this.data.box[this.dataNum - 1].x = oBox[i].x;
+                                    this.data.box[this.dataNum - 1].y = oBox[i].y;
+                                    console.log(this.data.box)
+                                    //每个移动的箱子赋值i,将每个箱子保存起来
+                                    this.data.box[this.dataNum - 1].index = i;
+                                    //箱子往前进一步
+                                    oBox[i].x += x;
+                                    oBox[i].y += y;
+                                    oBox[i].style.left = oBox[i].x * 29 + "px";
+                                    oBox[i].style.top = oBox[i].y * 29 + "px";
+                                    oBox[i].style.zIndex = oBox[i].x + oBox[i].y * this.size.x;
+                                    //箱子移动时执行
+                                    this.pass();
+                                }
+
+                            } else {
+                                //人的移动,键盘上下左右
+                                oParent.x -= x;
+                                oParent.y -= y;
+                                oParent.style.left = oParent.x * 29 + "px";
+                                oParent.style.top = oParent.y * 29 + "px";
+                                this.dataNum--;
+                                this.data.person.pop();
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            },
+            prev: function () {
+                //this本来指向事件调用的元素prev,改为指向myGame
+                var that = myGame;
+                var person = document.getElementsByClassName("person")[0];
+                var oBox = document.getElementsByClassName("Xz");
+                var oParent = person.parentNode;
+                var moveBox;
+                // console.log(oBox)
+                //每次点击上一步都要从x,y轴-1(上一步)
+                if (that.dataNum > 0) {
+                    oParent.x = that.data.person[that.dataNum - 1].x;
+                    oParent.y = that.data.person[that.dataNum - 1].y;
+                    oParent.style.left = oParent.x * 29 + "px";
+                    oParent.style.top = oParent.y * 29 + "px";
+                    oParent.style.zIndex = oParent.x + oParent.y * that.size.x;
+                    person.src = that.data.person[that.dataNum - 1].src;
+                    if (that.data.box[that.dataNum - 1]) {
+                        moveBox = oBox[that.data.box[that.dataNum - 1].index];
+                        moveBox.x = that.data.box[that.dataNum - 1].x;
+                        moveBox.y = that.data.box[that.dataNum - 1].y;
+                        moveBox.style.left = moveBox.x * 29 + "px";
+                        moveBox.style.top = moveBox.y * 29 + "px";
+                        moveBox.style.zIndex = moveBox.x + moveBox.y * that.size.x;
+                    }
+                    that.dataNum--;
+                }
+
+            },
+            //箱箱碰撞 箱子移动时检测
+            boxsCrash: function (obj, x, y) {
+                var oBox = document.getElementsByClassName('Xz');
+                for (var i = 0; i < oBox.length; i++) {
+                    //当前一个箱子与后一个箱子一样,x,y轴坐标一样
+                    if (obj != oBox[i] && obj.x + x == oBox[i].x && obj.y + y == oBox[i].y) {
+                        return true;
+                    }
+                }
+                // return false;
+            },
+            //封装箱子与终点重合函数
+            pass: function () {
+                var oBox = document.getElementsByClassName("Xz");
+                var oBourn = document.getElementsByClassName("Zd");
+                // console.log(oBox)
+                var count = 0;
+                //遍历终点
+                for (var i = 0; i < oBourn.length; i++) {
+                    //遍历箱子
+                    for (var j = 0; j < oBox.length; j++) {
+                        if (oBourn[i].x == oBox[j].x && oBourn[i].y == oBox[j].y) {
+                            count++;
+                            // console.log(1)
+                        }
+                    }
+                    // console.log(count)
+                    if (count == oBourn.length) {
+                        setTimeout(() => {
+                            this.level++;
+                            if(this.level > this.arrGame.length - 1){
+                                this.level = this.level; 
+                                alert("这是最后一关")
+                            }else{
+                                alert("成功过关,下一关开始")
+                                //执行创建地图函数,第二关.....
+                                this.gameMap(this.level)
+                            }
+                            
+                           
+                        }, 0)
+
+                    }
+                }
+
+
+
+            },
+            //游戏地图(关卡),数字化表示
+            arrGame: [
+                [
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 1, 3, 0, 3, 2, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 2, 0, 3, 4, 1, 1, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+                ],
+                [
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 4, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 0, 3, 3, 1, 0, 1, 1, 1, 0, 0, 0,
+                    0, 0, 0, 0, 1, 0, 3, 0, 1, 0, 1, 2, 1, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 2, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 2, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                ],
+
+
+                [
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 4, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 0, 3, 0, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 2, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 2, 2, 5, 2, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                ],
+                [
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 4, 0, 1, 1, 1, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 1, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 2, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 2, 3, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 2, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                ],
+                [
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 1, 0, 2, 1, 1, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 1, 0, 0, 3, 2, 1, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 0, 3, 0, 0, 1, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 0, 0, 0, 3, 3, 0, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                ],
+            ]
+        }
+        myGame.init()
+
+    </script>
+</body>
+
+</html>
